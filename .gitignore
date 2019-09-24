@@ -1,0 +1,6 @@
+*.mid
+*.pyc
+*.pth
+*.xml
+*.pickle
+*.iml
