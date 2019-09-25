@@ -21,11 +21,12 @@ def train(training_input, training_labels, num_unique_tokens, sequence_length):
     net = TransformerNet(embedding_dim=500, num_mappings=num_unique_tokens,
                          num_heads=4, num_blocks=3, seq_length=sequence_length)
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(net.parameters(), lr=5e-4)
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-4, weight_decay=1e-3)
 
     # Define number of epochs
-    num_epochs = 60
+    num_epochs = 10
     print_batch_step = 100
+    best_epoch_loss = 1000
 
     # Start training
     net = net.to(device)
@@ -58,14 +59,12 @@ def train(training_input, training_labels, num_unique_tokens, sequence_length):
                 print('[%d, %5d] loss: %.3f' % (epoch + 1, i, running_loss / print_batch_step))
                 running_loss = 0
 
-        print(f"Epoch {epoch +1}: average loss is {epoch_loss / len(training_dataset)}")
-    # best_accuracy = 0
-    # is_best = True
-    # save_checkpoint({
-    #     'epoch': start_epoch + epoch + 1,
-    #     'state_dict': net.state_dict(),
-    #     'best_accuracy': best_accuracy
-    # }, is_best)
+        epoch_num = epoch + 1
+        average_epoch_loss = epoch_loss / len(training_dataset)
+        print(f"Epoch {epoch_num}: average loss is {average_epoch_loss}")
+
+        if average_epoch_loss < best_epoch_loss:
+            net.save_checkpoint(epoch_num, average_epoch_loss, optimizer.state_dict())
+            best_epoch_loss = average_epoch_loss
+
     print('Finished Training')
-    print("Saving model to disk")
-    torch.save(net.state_dict(), "piano_lstm_chopin.pth")

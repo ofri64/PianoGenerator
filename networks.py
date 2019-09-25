@@ -1,16 +1,9 @@
+from pathlib import Path
+from datetime import datetime
 import torch
 import torch.nn as nn
 
 from transformer_layers import TransformerLayer
-
-
-def save_checkpoint(state, is_best, filename='/output/checkpoint.pth.tar'):
-    """Save checkpoint if a new best is achieved"""
-    if is_best:
-        print ("=> Saving a new best")
-        torch.save(state, filename)  # save checkpoint
-    else:
-        print("=> Validation Accuracy did not improve")
 
 
 class SentimentNet(nn.Module):
@@ -50,9 +43,27 @@ class TransformerNet(nn.Module):
         super().__init__()
         self.transformer = TransformerLayer(embedding_dim, num_mappings, num_heads, num_blocks, seq_length, padding_idx)
         self.linear = nn.Linear(in_features=embedding_dim, out_features=num_mappings)
+        self.checkpoint_dir = None
 
     def forward(self, x):
         x = self.transformer(x)
         out = self.linear(x)
 
         return out
+
+    def save_checkpoint(self, epoch, epoch_loss, optimizer_state_dict):
+        if self.checkpoint_dir is None:
+            self.checkpoint_dir = Path(f"training_checkpoint_{datetime.now().strftime('%d.%m.%Y_%H:%M:%S')}")
+            self.checkpoint_dir.mkdir(parents=True)
+
+        current_time = datetime.now().strftime('%d.%m.%Y_%H:%M:%S')
+        checkpoint_path = self.checkpoint_dir / f"epoch_{epoch}{current_time}.pth"
+        checkpoint = {
+            "epoch": epoch,
+            "model_state_dict": self.state_dict(),
+            "optimizer_state_dict": optimizer_state_dict,
+            "loss": epoch_loss
+        }
+
+        print(f"Saving model checkpoint for end of epoch {epoch}")
+        torch.save(checkpoint, checkpoint_path)
