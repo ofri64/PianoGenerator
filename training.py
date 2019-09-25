@@ -40,8 +40,12 @@ def train(training_input, training_labels, num_unique_tokens, sequence_length):
             inputs, labels = data_[0].to(device), data_[1].to(device)
 
             optimizer.zero_grad()
-
             outputs = net(inputs)
+
+            # flatten sequence dim to batch dim before Softmax + CE
+            batch, seq, num_classes = outputs.size()
+            outputs = outputs.view(batch * seq, num_classes)
+            labels = labels.view(batch * seq)
             loss = criterion(outputs, labels)
 
             loss.backward()
