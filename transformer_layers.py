@@ -88,7 +88,6 @@ class TransformerLayer(nn.Module):
             transformer_blocks.append(TransformerBlock(embedding_dim, num_heads))
 
         self.transformer_blocks = nn.Sequential(*transformer_blocks)
-        self.linear = nn.Linear(in_features=embedding_dim, out_features=num_mappings)
 
     def forward(self, x):
         # create discrete tokens embeddings
@@ -103,8 +102,7 @@ class TransformerLayer(nn.Module):
         x = embeddings + position_embeddings
 
         # run through transformer blocks
-        x = self.transformer_blocks(x)
-        out = self.linear(x)
+        out = self.transformer_blocks(x)
 
         return out
 
