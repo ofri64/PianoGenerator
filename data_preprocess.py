@@ -2,6 +2,7 @@ import glob
 import pickle
 from random import shuffle, seed
 
+import numpy as np
 from music21 import converter, instrument, note, chord
 
 
@@ -45,8 +46,8 @@ def get_notes_from_midi_file(file_path, notes_list):
 
 def load_from_pickle(file_path):
     with open(file_path, 'rb') as filepath:
-        notes = pickle.load(filepath)
-    return notes
+        data = pickle.load(filepath)
+    return data
 
 
 def save_to_pickle(file_path, data):
@@ -70,8 +71,10 @@ def prepare_sequences(notes, sequence_len, translator):
     return network_input, network_labels
 
 
-def prepare_predict_init_state(notes, sequence_len):
-    pass
+def prepare_predict_init_state(training_notes, sequence_len):
+    start = np.random.randint(0, len(training_notes) - sequence_len -1)
+    init_state = training_notes[start: start + sequence_len]
+    return init_state
 
 
 def load_training_data(data_dir_path, sequence_length=256, save_data=True, load_data=False):
