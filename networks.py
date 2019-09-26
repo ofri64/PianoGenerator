@@ -57,8 +57,9 @@ class TransformerNet(nn.Module):
             self.checkpoint_dir.mkdir(parents=True)
 
         current_time = datetime.now().strftime('%d.%m.%Y_%H:%M:%S')
-        checkpoint_path = self.checkpoint_dir / f"epoch_{epoch}{current_time}.pth"
+        checkpoint_path = self.checkpoint_dir / "checkpoint.pth"
         checkpoint = {
+            "time": current_time,
             "epoch": epoch,
             "model_state_dict": self.state_dict(),
             "optimizer_state_dict": optimizer_state_dict,

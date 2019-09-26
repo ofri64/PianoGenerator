@@ -1,8 +1,8 @@
 """ This module prepares midi file data and feeds it to the neural
     network for training """
 import torch
-# from music21 import converter, instrument, note, chord
 
+import generation
 from training import train
 from data_preprocess import load_training_data
 

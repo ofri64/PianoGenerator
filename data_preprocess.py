@@ -43,25 +43,19 @@ def get_notes_from_midi_file(file_path, notes_list):
             notes_list.append('.'.join(str(n) for n in element.normalOrder))
 
 
-def load_notes_from_pickle(file_path):
+def load_from_pickle(file_path):
     with open(file_path, 'rb') as filepath:
         notes = pickle.load(filepath)
     return notes
 
 
-def save_notes_to_pickle(file_path, notes):
+def save_to_pickle(file_path, data):
     with open(file_path, "wb") as filepath:
-        pickle.dump(notes, filepath, pickle.HIGHEST_PROTOCOL)
+        pickle.dump(data, filepath, pickle.HIGHEST_PROTOCOL)
 
 
-def prepare_sequences(notes, sequence_len):
+def prepare_sequences(notes, sequence_len, translator):
     """ Prepare the sequences used by the Neural Network """
-
-    # get all pitch names
-    unique_notes = set(item for item in notes)
-
-    # create a dictionary to map pitches to integers
-    note_to_int = {note: index for index, note in enumerate(unique_notes)}
 
     network_input = []
     network_labels = []
@@ -70,25 +64,43 @@ def prepare_sequences(notes, sequence_len):
     for i in range(0, len(notes) - sequence_len - 1, 1):
         X = notes[i:i + sequence_len]
         y = notes[i+1: i+1 + sequence_len]
-        network_input.append([note_to_int[char] for char in X])
-        network_labels.append([note_to_int[char] for char in y])
+        network_input.append([translator[char] for char in X])
+        network_labels.append([translator[char] for char in y])
 
-    return network_input, network_labels, len(unique_notes)
+    return network_input, network_labels
+
+
+def prepare_predict_init_state(notes, sequence_len):
+    pass
 
 
 def load_training_data(data_dir_path, sequence_length=256, save_data=True, load_data=False):
     if load_data:
-        all_notes = load_notes_from_pickle("all_notes.pickle")
+        training_data= load_from_pickle("training_data.pickle")
+        all_notes = training_data["data"]
+        note_translator = training_data["note_translator"]
 
     else:
         input_files = get_list_midi(data_dir_path)
+
+        # get all training date samples
         all_notes = []
         for file_ in input_files:
             get_notes_from_midi_file(file_, all_notes)
 
-        if save_data:
-            save_notes_to_pickle("all_notes.pickle", all_notes)
+        # get all pitch names
+        unique_notes = set(item for item in all_notes)
 
-    training_input, training_labels, num_unique_notes = prepare_sequences(all_notes, sequence_len=sequence_length)
+        # create a dictionary to map pitches to integers
+        note_translator = {note: index for index, note in enumerate(unique_notes)}
+
+        if save_data:
+            save_to_pickle("training_data.pickle", {
+                "data": all_notes,
+                "note_translator": note_translator
+            })
+
+    training_input, training_labels = prepare_sequences(all_notes, sequence_length, note_translator)
+    num_unique_notes = len(note_translator)
 
     return training_input, training_labels, num_unique_notes
