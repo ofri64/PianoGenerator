@@ -41,20 +41,22 @@ def generate_notes(model, training_notes, note_translator):
     model.eval()
 
     # generate notes
-    notes_to_generate = 2
+    notes_to_generate = 512
     for i in range(notes_to_generate):
         input_tensor = torch.tensor(X).view(1, -1).to(device)
-        next_note_logits = model(input_tensor)[:, :, :]  # take only next character not entire sequence
+        all_next_notes_logits = model(input_tensor)
+        next_note_logits = all_next_notes_logits[:, -1, :]  # take the last vector of the sequence
 
-        next_notes_index = sample_prediction(next_note_logits, "")
+        next_note_index = sample_prediction(next_note_logits, "")
         # _, next_note_index = torch.max(next_note_logits, dim=2)
         # next_note_index = next_note_index.cpu().item()
 
-        next_notes = [note_reverse_translator[note] for note in next_notes_index.cpu().numpy().flatten()]
-        # next_note = note_reverse_translator[next_note_index]
-        prediction_output += next_notes
-        X += list(next_notes_index.cpu().numpy().flatten())
-        X = X[sequence_length:]  # advance to next prediction using generated note
+        # next_notes = [note_reverse_translator[note] for note in next_notes_index.cpu().numpy().flatten()]
+        next_note_index = next_note_index.cpu().item()
+        next_note = note_reverse_translator[next_note_index]
+        prediction_output.append(next_note)
+        X.append(next_note_index)
+        X = X[1:]  # advance to next prediction using generated note
 
     return prediction_output
 
@@ -68,7 +70,7 @@ def sample_prediction(logits: torch.tensor, method: str, k=20) -> int:
 
     # sample from distribution vector as a multinomial distribution
     logits = logits.view(logits.size()[1:])
-    dist = F.softmax(logits, dim=1)
+    dist = F.softmax(logits, dim=0)
     next_notes_index = torch.multinomial(dist, 1)
 
     return next_notes_index
